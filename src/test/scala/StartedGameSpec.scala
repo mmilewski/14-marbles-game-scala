@@ -27,17 +27,26 @@ class StartedGameSpec extends SpecificationLike {
 
   def createGame(board: Board): Game = new Game(board)
 
-  "When a game is started, the player" should {
+  "When the player wants to move his marble around, he should" should {
 
     "be forbidden to move a marble he does not own" in {
       val srcPos = Pos("a", 1)
       val dstPos = Pos("a", 2)
 
       val board: Board = emptyBoard.overwrite(srcPos, player1.marble)
-      board.at(srcPos) mustNotEqual NoPiece
 
       // verify
       createGame(board).move(player2, srcPos, dstPos) must beFailedTry.withThrowable[IllegalMoveException]
+    }
+
+    "be forbidden to move a marble to nonempty field" in {
+      val srcPos = Pos("a", 1)
+      val dstPos = Pos("a", 2)
+
+      val board: Board = emptyBoard.overwrite(srcPos, player1.marble).overwrite(dstPos, player2.marble)
+
+      // verify
+      createGame(board).move(player1, srcPos, dstPos) must beFailedTry.withThrowable[IllegalMoveException]
     }
 
     "be allowed to move his marble to all neighbour fields and nowhere else" in {

@@ -57,13 +57,15 @@ class Game(val board: Board) {
   }
 
   private def checkThisMove(board: Board, player: Player, srcPost: Pos, dstPost: Pos): Try[Unit] = {
-    val checks = Stream(
+    val checks: Seq[(() => Boolean, IllegalMoveException)] = Seq(
       (() => board.exist(srcPost) && board.exist(dstPost),
-        IllegalMoveException(s"One of the positions is outside of the board, the move was $srcPost -> $dstPost")),
+        IllegalMoveException(s"One of the positions is outside of the board, the move was: $srcPost -> $dstPost")),
       (() => areNeighbours(srcPost, dstPost),
         IllegalMoveException(s"Cannot move between fields which are not neighbours $srcPost -> $dstPost")),
       (() => board.atOption(srcPost).contains(player.marble),
-        IllegalMoveException(s"Player can move only his marbles (i.e. ${player.marble}"))
+        IllegalMoveException(s"Player can move only his marbles (i.e. ${player.marble}")),
+      (() => board.at(dstPost).isEmpty,
+        IllegalMoveException(s"Destination field must be empty to move there a marble. The move was: $srcPost -> $dstPost"))
     )
 
     checks.dropWhile(_._1()).headOption match {
