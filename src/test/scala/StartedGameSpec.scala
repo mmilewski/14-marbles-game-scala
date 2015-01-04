@@ -28,29 +28,39 @@ class StartedGameSpec extends SpecificationLike {
   def createGame(board: Board): Game = new Game(board)
 
   "When a game is started, the player" should {
-    val oldPos = Pos("a", 1)
-    val newPos = Pos("a", 2)
 
     "be forbidden to move a marble he does not own" in {
-      val board: Board = emptyBoard.overwrite(oldPos, player1.marble)
-      board.at(oldPos) mustNotEqual NoPiece
+      val srcPos = Pos("a", 1)
+      val dstPos = Pos("a", 2)
+
+      val board: Board = emptyBoard.overwrite(srcPos, player1.marble)
+      board.at(srcPos) mustNotEqual NoPiece
 
       // verify
-      createGame(board).move(player2, oldPos, newPos) must beFailedTry.withThrowable[IllegalArgumentException]
+      createGame(board).move(player2, srcPos, dstPos) must beFailedTry.withThrowable[IllegalMoveException]
     }
 
-    "be able to move a marble which belongs to him" in {
-      val board: Board = emptyBoard.overwrite(oldPos, player1.marble)
-      board.at(oldPos) mustEqual player1.marble
+    "be allowed to move his marble to all neighbour fields and nowhere else" in {
+      val srcPos = Pos("b", 2)
+      val marble = player1.marble
+
+      val board: Board = emptyBoard.overwrite(srcPos, marble)
 
       // verify
-      createGame(board).move(player1, oldPos, newPos) must beSuccessfulTry.like {
-        case game: Game =>
-          val newBoard: Board = game.board
-          newBoard.at(oldPos) mustEqual NoPiece
-          newBoard.at(newPos) mustEqual player1.marble
-          success
+      val allowedPositions = for {
+        row <- "abcde".toList.map(_.toString)
+        col <- 1 to 5
+        p = Pos(row, col)
+        if createGame(board).move(player1, srcPos, p).isSuccess
+      } yield {
+        p
       }
+
+      allowedPositions must containTheSameElementsAs(List(
+        Pos("b", 1), Pos("b", 3),
+        Pos("a", 1), Pos("a", 2),
+        Pos("c", 2), Pos("c", 3)
+      ))
     }
 
   }
