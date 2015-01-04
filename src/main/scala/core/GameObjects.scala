@@ -40,15 +40,15 @@ case class Board(posToPiece: Map[Pos, Piece]) {
 case class IllegalMoveException(msg: String) extends RuntimeException
 
 class Game(val board: Board) {
-  def move(requester: Player, srcPost: Pos, dstPost: Pos): Try[Game] = {
+  def move(requester: Player, src: Pos, dst: Pos): Try[Game] = {
 
-    checkThisMove(board, requester, srcPost, dstPost) match {
+    checkThisMove(board, requester, src, dst) match {
       case Success(_) =>
-        val marbleToMove: Piece = board.at(srcPost)
+        val marbleToMove: Piece = board.at(src)
         val newBoard: Board =
           board
-            .overwrite(dstPost, marbleToMove)
-            .overwrite(srcPost, NoPiece)
+            .overwrite(dst, marbleToMove)
+            .overwrite(src, NoPiece)
         Success(new Game(newBoard))
 
       case Failure(ex) => Failure(ex)
@@ -56,16 +56,16 @@ class Game(val board: Board) {
 
   }
 
-  private def checkThisMove(board: Board, player: Player, srcPost: Pos, dstPost: Pos): Try[Unit] = {
+  private def checkThisMove(board: Board, player: Player, src: Pos, dst: Pos): Try[Unit] = {
     val checks: Seq[(() => Boolean, IllegalMoveException)] = Seq(
-      (() => board.exist(srcPost) && board.exist(dstPost),
-        IllegalMoveException(s"One of the positions is outside of the board, the move was: $srcPost -> $dstPost")),
-      (() => areNeighbours(srcPost, dstPost),
-        IllegalMoveException(s"Cannot move between fields which are not neighbours $srcPost -> $dstPost")),
-      (() => board.atOption(srcPost).contains(player.marble),
+      (() => board.exist(src) && board.exist(dst),
+        IllegalMoveException(s"One of the positions is outside of the board, the move was: $src -> $dst")),
+      (() => areNeighbours(src, dst),
+        IllegalMoveException(s"Cannot move between fields which are not neighbours $src -> $dst")),
+      (() => board.atOption(src).contains(player.marble),
         IllegalMoveException(s"Player can move only his marbles (i.e. ${player.marble}")),
-      (() => board.at(dstPost).isEmpty,
-        IllegalMoveException(s"Destination field must be empty to move there a marble. The move was: $srcPost -> $dstPost"))
+      (() => board.at(dst).isEmpty,
+        IllegalMoveException(s"Destination field must be empty to move there a marble. The move was: $src -> $dst"))
     )
 
     checks.dropWhile(_._1()).headOption match {
@@ -78,7 +78,7 @@ class Game(val board: Board) {
   /**
    * Positions passed as arguments must be valid (i.e. exist on board)
    */
-  private def areNeighbours(srcPost: Pos, dstPost: Pos): Boolean = {
+  private def areNeighbours(src: Pos, dst: Pos): Boolean = {
     def rowToInt(a: String): Int = a.charAt(0).asDigit
 
     def upperRow(a: String, b: String): Boolean = rowToInt(a) + 1 == rowToInt(b)
@@ -86,7 +86,7 @@ class Game(val board: Board) {
     def rightColumn(a: Int, b: Int): Boolean = a + 1 == b
     def leftColumn(a: Int, b: Int): Boolean = a - 1 == b
 
-    (srcPost, dstPost) match {
+    (src, dst) match {
       case (Pos(oldRow, oldCol), Pos(newRow, newCol)) =>
         ((oldCol == newCol && (upperRow(oldRow, newRow) || lowerRow(oldRow, newRow)))
           || (leftColumn(oldCol, newCol) && ((oldRow == newRow) || lowerRow(oldRow, newRow)))

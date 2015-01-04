@@ -30,37 +30,37 @@ class StartedGameSpec extends SpecificationLike {
   "When the player wants to move his marble around, he should" should {
 
     "be forbidden to move a marble he does not own" in {
-      val srcPos = Pos("a", 1)
-      val dstPos = Pos("a", 2)
+      val src = Pos("a", 1)
+      val dst = Pos("a", 2)
 
-      val board: Board = emptyBoard.overwrite(srcPos, player1.marble)
+      val board: Board = emptyBoard.overwrite(src, player1.marble)
 
       // verify
-      createGame(board).move(player2, srcPos, dstPos) must beFailedTry.withThrowable[IllegalMoveException]
+      createGame(board).move(player2, src, dst) must beFailedTry.withThrowable[IllegalMoveException]
     }
 
     "be forbidden to move a marble to nonempty field" in {
-      val srcPos = Pos("a", 1)
-      val dstPos = Pos("a", 2)
+      val src = Pos("a", 1)
+      val dst = Pos("a", 2)
 
-      val board: Board = emptyBoard.overwrite(srcPos, player1.marble).overwrite(dstPos, player2.marble)
+      val board: Board = emptyBoard.overwrite(src, player1.marble).overwrite(dst, player2.marble)
 
       // verify
-      createGame(board).move(player1, srcPos, dstPos) must beFailedTry.withThrowable[IllegalMoveException]
+      createGame(board).move(player1, src, dst) must beFailedTry.withThrowable[IllegalMoveException]
     }
 
     "be allowed to move his marble to all neighbour fields and nowhere else" in {
-      val srcPos = Pos("b", 2)
+      val src = Pos("b", 2)
       val marble = player1.marble
 
-      val board: Board = emptyBoard.overwrite(srcPos, marble)
+      val board: Board = emptyBoard.overwrite(src, marble)
 
       // verify
       val allowedPositions = for {
         row <- "abcde".toList.map(_.toString)
         col <- 1 to 5
         p = Pos(row, col)
-        if createGame(board).move(player1, srcPos, p).isSuccess
+        if createGame(board).move(player1, src, p).isSuccess
       } yield {
         p
       }
