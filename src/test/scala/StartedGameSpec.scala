@@ -36,7 +36,8 @@ class StartedGameSpec extends SpecificationLike {
       val board: Board = emptyBoard.overwrite(src, player1.marble)
 
       // verify
-      createGame(board).move(player2, src, dst) must beFailedTry.withThrowable[IllegalMoveException]
+      val newGame = createGame(board).move(player2, src, dst)
+      newGame must beFailedTry.withThrowable[IllegalMoveException]
     }
 
     "be forbidden to move a marble to nonempty field" in {
@@ -46,7 +47,8 @@ class StartedGameSpec extends SpecificationLike {
       val board: Board = emptyBoard.overwrite(src, player1.marble).overwrite(dst, player2.marble)
 
       // verify
-      createGame(board).move(player1, src, dst) must beFailedTry.withThrowable[IllegalMoveException]
+      val newGame = createGame(board).move(player1, src, dst)
+      newGame must beFailedTry.withThrowable[IllegalMoveException]
     }
 
     "be allowed to move his marble to all neighbour fields and nowhere else" in {
@@ -57,10 +59,11 @@ class StartedGameSpec extends SpecificationLike {
 
       // verify
       val allowedPositions = for {
-        row <- "abcde".toList.map(_.toString)
+        row <- List("a", "b", "c", "d", "e")
         col <- 1 to 5
         p = Pos(row, col)
-        if createGame(board).move(player1, src, p).isSuccess
+        newGame = createGame(board).move(player1, src, p)
+        if newGame.isSuccess
       } yield {
         p
       }
