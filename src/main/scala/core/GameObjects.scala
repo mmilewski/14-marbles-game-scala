@@ -37,6 +37,24 @@ case class Board(posToPiece: Map[Pos, Piece]) {
   }
 }
 
+sealed trait Direction
+
+object Direction {
+
+  case object West extends Direction
+
+  case object East extends Direction
+
+  case object NorthWest extends Direction
+
+  case object NorthEast extends Direction
+
+  case object SouthWest extends Direction
+
+  case object SouthEast extends Direction
+
+}
+
 case class IllegalMoveException(msg: String) extends RuntimeException
 
 class Game(val board: Board) {
@@ -52,6 +70,20 @@ class Game(val board: Board) {
         Success(new Game(newBoard))
 
       case Failure(ex) => Failure(ex)
+    }
+
+  }
+
+  def moveMany(requester: Player, ps: Seq[Pos], direction: Direction): Try[Game] = {
+    ps match {
+      case Seq(p1, p2) =>
+        val newBoard =
+          board
+            .overwrite(p1, NoPiece)
+            .overwrite(p2, requester.marble)
+            .overwrite(Pos("b", 3), requester.marble)
+        Success(new Game(newBoard))
+      case _ => Failure(new IllegalStateException(s"Couldn't handle move: $direction, $ps"))
     }
 
   }

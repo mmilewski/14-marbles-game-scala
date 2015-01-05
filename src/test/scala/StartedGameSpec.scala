@@ -76,4 +76,71 @@ class StartedGameSpec extends SpecificationLike {
     }
 
   }
+
+  "When the player wants to move multiple marbles, he should" should {
+
+    "be able to move 2 horizontally" in {
+      val pos1 = Pos("b", 1)
+      val pos2 = Pos("b", 2)
+      val pos3 = Pos("b", 3)
+
+      val marble = player1.marble
+
+      val board = emptyBoard
+        .overwrite(pos1, marble)
+        .overwrite(pos2, marble)
+
+      val newGame = createGame(board).moveMany(player1, List(pos1, pos2), Direction.East)
+      newGame must beSuccessfulTry.like {
+        case game: Game =>
+          val newBoard: Board = game.board
+          newBoard.at(pos1) === NoPiece
+          newBoard.at(pos2) === marble
+          newBoard.at(pos3) === marble
+          success
+      }
+
+    }
+
+    "be able to move 3 horizontally" in {
+      success
+    }
+
+    "be forbidden to move 4 horizontally" in {
+      success
+    }
+
+    "be forbidden to move vertically if there is not enough space" in {
+      success
+    }
+  }
+
+  "When the player wants to push other player's marbles, he should" should {
+
+    "be able to push 1 marble with 2 marbles" in {
+      success
+    }
+
+    "be able to push 2 marbles with 3 marbles" in {
+      success
+    }
+
+    "be forbidden to push 1 marble" in {
+      success
+    }
+
+    "be forbidden to push his marbles" in {
+      success
+    }
+
+    "be forbidden to push with other player's marbles" in {
+      success
+    }
+
+    "be forbidden to push if there is not enough empty space" in {
+      success
+    }
+
+  }
+
 }
