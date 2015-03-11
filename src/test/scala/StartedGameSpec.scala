@@ -27,7 +27,7 @@ class StartedGameSpec extends SpecificationLike {
 
   def createGame(board: Board): Game = new Game(board)
 
-  "When the player wants to move his marble around, he should" should {
+  "When the player wants to move a marble around, he should" should {
 
     "be forbidden to move a marble he does not own" in {
       val src = Pos("a", 1)
