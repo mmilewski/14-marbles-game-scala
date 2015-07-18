@@ -2,7 +2,35 @@ package core
 
 import scala.util.{Failure, Success, Try}
 
-case class Pos(row: String, column: Int)
+case class Pos(row: String, column: Int) {
+  require(row.length == 1)
+
+  def moved(direction: MoveDirection): Pos = {
+    direction match {
+      case MoveDirection.East => Pos(row, column + 1)
+      case MoveDirection.West => Pos(row, column - 1)
+      case MoveDirection.NorthEast => ???
+      case MoveDirection.NorthWest => ???
+      case MoveDirection.SouthEast => ???
+      case MoveDirection.SouthWest => ???
+    }
+  }
+
+  def isHorizontalNeighbourOf(other: Pos): Boolean = {
+    this.moved(MoveDirection.East) == other
+  }
+}
+
+object Pos {
+  /**
+   * Create object from "a1" instead of ("a", 1) - only for convenience
+   */
+  def apply(position: String): Pos = {
+    val s = position.toLowerCase
+    require(s.length == 2)
+    Pos(s.substring(0, 1), s.substring(1, 2).toInt)
+  }
+}
 
 case class Player(name: String, marbleColor: String) {
   val marble = Marble(marbleColor)
@@ -68,16 +96,38 @@ class Game(val board: Board) {
 
   }
 
+  /**
+   * @param ps Positions must be specified from left to right, if horizontal. Diagonal positions are not supported yet.
+   */
   def moveMany(requester: Player, ps: Seq[Pos], direction: MoveDirection): Try[Game] = {
     ps match {
-      case Seq(p1, p2) =>
-        val newBoard =
-          board
-            .updated(p1, EmptyBoardPiece)
-            .updated(p2, requester.marble)
-            .updated(Pos("b", 3), requester.marble)
-        Success(new Game(newBoard))
-      case _ => Failure(new IllegalStateException(s"Couldn't handle move: $direction, $ps"))
+      case Seq() =>
+        Success(this)
+      case Seq(pos) =>
+        move(requester, pos, pos.moved(direction))
+      case seq if seq.length <= 3 =>
+        require(Set[MoveDirection](MoveDirection.East, MoveDirection.West).contains(direction))
+        val allHorizontalNeighbours = (seq zip (seq.tail)).map { case (p, r) => p.isHorizontalNeighbourOf(r) }.reduce(_ && _)
+        allHorizontalNeighbours match {
+          case true =>
+            val newBoard = if (direction == MoveDirection.East) {
+              board
+                .updated(seq.head, EmptyBoardPiece)
+                .updated(seq.last.moved(direction), requester.marble)
+            } else if (direction == MoveDirection.West) {
+              board
+                .updated(seq.head.moved(direction), requester.marble)
+                .updated(seq.last, EmptyBoardPiece)
+            } else {
+              ???
+            }
+
+            Success(new Game(newBoard))
+          case false =>
+            Failure(new IllegalMoveException(s"Cannot move $seq towards $direction"))
+        }
+      case seq =>
+        Failure(new IllegalMoveException(s"Cannot move $seq marbles towards $direction because there are more than 3"))
     }
 
   }

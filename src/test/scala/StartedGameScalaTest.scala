@@ -1,9 +1,9 @@
 import core._
-import org.scalatest.{Inside, Matchers, TryValues, WordSpec}
+import org.scalatest.{Inside, MustMatchers, TryValues, WordSpec}
 
 import scala.util.Try
 
-class StartedGameScalaTest extends WordSpec with TryValues with Matchers with Inside {
+class StartedGameScalaTest extends WordSpec with TryValues with MustMatchers with Inside {
 
   val boardLines = """
                      |  e o o o
@@ -38,7 +38,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
 
         // verify
         val newGame = createGame(board).move(player2, src, dst)
-        newGame.failure.exception should be(a[IllegalMoveException])
+        newGame.failure.exception must be(a[IllegalMoveException])
       }
 
       "be forbidden to move a marble to nonempty field" in {
@@ -49,7 +49,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
 
         // verify
         val newGame = createGame(board).move(player1, src, dst)
-        newGame.failure.exception should be(a[IllegalMoveException])
+        newGame.failure.exception must be(a[IllegalMoveException])
       }
 
       "be allowed to move his marble to all neighbour fields and nowhere else" in {
@@ -69,7 +69,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
             p
           }
 
-        allowedPositions should contain theSameElementsAs List(
+        allowedPositions must contain theSameElementsAs List(
           Pos("b", 1), Pos("b", 3),
           Pos("a", 1), Pos("a", 2),
           Pos("c", 2), Pos("c", 3)
@@ -83,32 +83,112 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
       "be able to move 2 horizontally" in {
         val pos1 = Pos("b", 1)
         val pos2 = Pos("b", 2)
-        val pos3 = Pos("b", 3)
+        val dst = Pos("b", 3)
 
         val marble = player1.marble
 
         val board = emptyBoard
           .updated(pos1, marble)
           .updated(pos2, marble)
+          .updated(dst, EmptyBoardPiece)
 
         val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2), MoveDirection.East)
+        newGame.isSuccess must be(true)
         inside(newGame.success.value) {
           case game: Game =>
             val newBoard: Board = game.board
-            newBoard.at(pos1) should equal(EmptyBoardPiece)
-            newBoard.at(pos2) should equal(marble)
-            newBoard.at(pos3) should equal(marble)
+            newBoard.at(pos1) must equal(EmptyBoardPiece)
+            newBoard.at(pos2) must equal(marble)
+            newBoard.at(dst) must equal(marble)
         }
 
       }
 
-      "be able to move 3 horizontally" in {
+      "be able to move 3 marbles horizontally east" in {
+        val pos1 = Pos("b1")
+        val pos2 = Pos("b2")
+        val pos3 = Pos("b3")
+        val dst = Pos("b4")
+
+        val marble = player1.marble
+
+        val board = emptyBoard
+          .updated(pos1, marble)
+          .updated(pos2, marble)
+          .updated(pos3, marble)
+          .updated(dst, EmptyBoardPiece)
+
+        val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2, pos3), MoveDirection.East)
+        inside(newGame.success.value) {
+          case game: Game =>
+            val newBoard: Board = game.board
+            newBoard.at(pos1) must equal(EmptyBoardPiece)
+            newBoard.at(pos2) must equal(marble)
+            newBoard.at(pos3) must equal(marble)
+            newBoard.at(dst) must equal(marble)
+        }
+      }
+
+      "be able to move 3 marbles horizontally west" in {
+        val dst = Pos("c1")
+        val pos1 = Pos("c2")
+        val pos2 = Pos("c3")
+        val pos3 = Pos("c4")
+
+        val marble = player1.marble
+
+        val board = emptyBoard
+          .updated(dst, EmptyBoardPiece)
+          .updated(pos1, marble)
+          .updated(pos2, marble)
+          .updated(pos3, marble)
+
+        val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2, pos3), MoveDirection.West)
+        inside(newGame.success.value) {
+          case game: Game =>
+            val newBoard: Board = game.board
+            newBoard.at(dst) must equal(marble)
+            newBoard.at(pos1) must equal(marble)
+            newBoard.at(pos2) must equal(marble)
+            newBoard.at(pos3) must equal(EmptyBoardPiece)
+        }
       }
 
       "be forbidden to move 4 horizontally" in {
+        val pos1 = Pos("c1")
+        val pos2 = Pos("c2")
+        val pos3 = Pos("c3")
+        val pos4 = Pos("c4")
+
+        val marble = player1.marble
+
+        val board = emptyBoard
+          .updated(pos1, marble)
+          .updated(pos2, marble)
+          .updated(pos3, marble)
+          .updated(pos4, marble)
+
+        val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2, pos3, pos4), MoveDirection.East)
+        newGame.isFailure must be(true)
       }
 
-      "be forbidden to move vertically if there is not enough space" in {
+      "be forbidden to move horizontally if there is not enough space" in {
+      }
+
+      "be allowed to move 2 and 3 marbles sideways" in {
+
+      }
+
+      "be forbidden to move more than 3 marbles sideways" in {
+
+      }
+
+      "be allowed to move more than 2 and 3 marbles diagonally" in {
+
+      }
+
+      "be forbidden to move more than 3 marbles diagonally" in {
+
       }
     }
 
