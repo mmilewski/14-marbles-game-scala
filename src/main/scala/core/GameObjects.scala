@@ -8,50 +8,44 @@ case class Player(name: String, marbleColor: String) {
   val marble = Marble(marbleColor)
 }
 
-trait Piece {
-  def isEmpty: Boolean = false
+trait BoardPiece
 
-  def isNonEmpty = !isEmpty
-}
+case object EmptyBoardPiece extends BoardPiece
 
-case object NoPiece extends Piece {
-  override def isEmpty: Boolean = true
-}
+case class Marble(color: String) extends BoardPiece
 
-case class Marble(color: String) extends Piece
-
-case class Board(posToPiece: Map[Pos, Piece]) {
-  def at(pos: Pos): Piece = {
+case class Board(posToPiece: Map[Pos, BoardPiece]) {
+  def at(pos: Pos): BoardPiece = {
     atOption(pos) match {
       case None => throw new IllegalArgumentException(s"Position $pos is invalid")
       case Some(piece) => piece
     }
   }
 
-  def atOption(pos: Pos): Option[Piece] = posToPiece.get(pos)
+  def atOption(pos: Pos): Option[BoardPiece] = posToPiece.get(pos)
 
   def exist(pos: Pos): Boolean = posToPiece.isDefinedAt(pos)
 
-  def overwrite(pos: Pos, newValue: Piece): Board = {
-    this.copy(posToPiece.updated(pos, newValue))
+  def updated(pos: Pos, newValue: BoardPiece): Board = {
+    this.copy(posToPiece = posToPiece.updated(pos, newValue))
   }
 }
 
-sealed trait Direction
+sealed trait MoveDirection
 
-object Direction {
+object MoveDirection {
 
-  case object West extends Direction
+  case object West extends MoveDirection
 
-  case object East extends Direction
+  case object East extends MoveDirection
 
-  case object NorthWest extends Direction
+  case object NorthWest extends MoveDirection
 
-  case object NorthEast extends Direction
+  case object NorthEast extends MoveDirection
 
-  case object SouthWest extends Direction
+  case object SouthWest extends MoveDirection
 
-  case object SouthEast extends Direction
+  case object SouthEast extends MoveDirection
 
 }
 
@@ -62,11 +56,11 @@ class Game(val board: Board) {
 
     checkThisMove(board, requester, src, dst) match {
       case Success(_) =>
-        val marbleToMove: Piece = board.at(src)
+        val marbleToMove: BoardPiece = board.at(src)
         val newBoard: Board =
           board
-            .overwrite(dst, marbleToMove)
-            .overwrite(src, NoPiece)
+            .updated(dst, marbleToMove)
+            .updated(src, EmptyBoardPiece)
         Success(new Game(newBoard))
 
       case Failure(ex) => Failure(ex)
@@ -74,14 +68,14 @@ class Game(val board: Board) {
 
   }
 
-  def moveMany(requester: Player, ps: Seq[Pos], direction: Direction): Try[Game] = {
+  def moveMany(requester: Player, ps: Seq[Pos], direction: MoveDirection): Try[Game] = {
     ps match {
       case Seq(p1, p2) =>
         val newBoard =
           board
-            .overwrite(p1, NoPiece)
-            .overwrite(p2, requester.marble)
-            .overwrite(Pos("b", 3), requester.marble)
+            .updated(p1, EmptyBoardPiece)
+            .updated(p2, requester.marble)
+            .updated(Pos("b", 3), requester.marble)
         Success(new Game(newBoard))
       case _ => Failure(new IllegalStateException(s"Couldn't handle move: $direction, $ps"))
     }
@@ -95,12 +89,13 @@ class Game(val board: Board) {
       (() => areNeighbours(src, dst),
         IllegalMoveException(s"Cannot move between fields which are not neighbours $src -> $dst")),
       (() => board.atOption(src).contains(player.marble),
-        IllegalMoveException(s"Player can move only his marbles (i.e. ${player.marble}")),
-      (() => board.at(dst).isEmpty,
-        IllegalMoveException(s"Destination field must be empty to move there a marble. The move was: $src -> $dst"))
+        IllegalMoveException(s"Player can move only his marbles (i.e. ${player.marble}). The move was: $src -> $dst")),
+      (() => board.at(dst) == EmptyBoardPiece,
+        IllegalMoveException(s"Destination field must be empty to move a marble there. The move was: $src -> $dst"))
     )
 
-    checks.dropWhile(_._1()).headOption match {
+    val firstViolation = checks.find(_._1() == false)
+    firstViolation match {
       case Some((_, ex)) => Failure(ex)
       case None => Success(())
     }

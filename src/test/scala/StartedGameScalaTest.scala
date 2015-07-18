@@ -15,12 +15,12 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
                    """
   val emptyBoard = Board(
     Seq(
-      (3 to 5) map (i => Pos("e", i) -> NoPiece),
-      (2 to 5) map (i => Pos("d", i) -> NoPiece),
-      (1 to 5) map (i => Pos("c", i) -> NoPiece),
-      (1 to 4) map (i => Pos("b", i) -> NoPiece),
-      (1 to 3) map (i => Pos("a", i) -> NoPiece)
-    ).flatMap(identity).toMap
+      (3 to 5) map (i => Pos("e", i) -> EmptyBoardPiece),
+      (2 to 5) map (i => Pos("d", i) -> EmptyBoardPiece),
+      (1 to 5) map (i => Pos("c", i) -> EmptyBoardPiece),
+      (1 to 4) map (i => Pos("b", i) -> EmptyBoardPiece),
+      (1 to 3) map (i => Pos("a", i) -> EmptyBoardPiece)
+    ).flatten.toMap
   )
 
   val player1 = Player("Tom", "white")
@@ -34,7 +34,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
         val src = Pos("a", 1)
         val dst = Pos("a", 2)
 
-        val board: Board = emptyBoard.overwrite(src, player1.marble)
+        val board: Board = emptyBoard.updated(src, player1.marble)
 
         // verify
         val newGame = createGame(board).move(player2, src, dst)
@@ -45,7 +45,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
         val src = Pos("a", 1)
         val dst = Pos("a", 2)
 
-        val board: Board = emptyBoard.overwrite(src, player1.marble).overwrite(dst, player2.marble)
+        val board: Board = emptyBoard.updated(src, player1.marble).updated(dst, player2.marble)
 
         // verify
         val newGame = createGame(board).move(player1, src, dst)
@@ -56,7 +56,7 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
         val src = Pos("b", 2)
         val marble = player1.marble
 
-        val board: Board = emptyBoard.overwrite(src, marble)
+        val board: Board = emptyBoard.updated(src, marble)
 
         // verify
         val allowedPositions = for {
@@ -66,8 +66,8 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
           newGame = createGame(board).move(player1, src, p)
           if newGame.isSuccess
         } yield {
-          p
-        }
+            p
+          }
 
         allowedPositions should contain theSameElementsAs List(
           Pos("b", 1), Pos("b", 3),
@@ -88,14 +88,14 @@ class StartedGameScalaTest extends WordSpec with TryValues with Matchers with In
         val marble = player1.marble
 
         val board = emptyBoard
-          .overwrite(pos1, marble)
-          .overwrite(pos2, marble)
+          .updated(pos1, marble)
+          .updated(pos2, marble)
 
-        val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2), Direction.East)
+        val newGame: Try[Game] = createGame(board).moveMany(player1, List(pos1, pos2), MoveDirection.East)
         inside(newGame.success.value) {
           case game: Game =>
             val newBoard: Board = game.board
-            newBoard.at(pos1) should equal(NoPiece)
+            newBoard.at(pos1) should equal(EmptyBoardPiece)
             newBoard.at(pos2) should equal(marble)
             newBoard.at(pos3) should equal(marble)
         }
